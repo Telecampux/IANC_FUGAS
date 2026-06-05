@@ -24,8 +24,7 @@ MATERIAL_SPEEDS = {
     "Personalizado": 950,
 }
 
-PROJECT_DIR = Path(r"D:\IANC_FUGAS")
-APP_DIR = PROJECT_DIR if PROJECT_DIR.exists() else Path(__file__).resolve().parent
+APP_DIR = Path(__file__).resolve().parent
 DATA_DIR = APP_DIR / "data"
 ACTIVE_SENSOR_CSV_PATH = DATA_DIR / "datos_sensores_activos.csv"
 LAST_UPLOADED_CSV_PATH = DATA_DIR / "ultimo_csv_cargado.csv"
@@ -49,6 +48,11 @@ SENSOR_DATA_COLUMNS = [
     "ruido_base",
     "frecuencia_dominante_hz",
     "tiempo_llegada_s",
+]
+
+CSV_SEARCH_DIRS = [
+    DATA_DIR,
+    APP_DIR,
 ]
 
 COPYRIGHT_DATA = {
@@ -122,66 +126,34 @@ def classify_intensity(intensity):
     return "Critica", "#d6336c"
 
 
-def load_sensor_csv(uploaded_file):
-    if uploaded_file is None:
-        return None, "Cargue un archivo CSV con datos de sensores para iniciar el analisis."
-
-    try:
-        data = pd.read_csv(uploaded_file)
-    except Exception as exc:
-        return None, f"No se pudo leer el archivo CSV: {exc}"
-
-    missing_columns = REQUIRED_COLUMNS - set(data.columns)
-    if missing_columns:
-        missing = ", ".join(sorted(missing_columns))
-        return None, f"Faltan columnas obligatorias en el CSV: {missing}"
-
-    if len(data) < 2:
-        return None, "El CSV debe contener al menos dos registros de sensores."
-
-    numeric_columns = [
-        "latitud",
-        "longitud",
-        "amplitud_rms",
-        "ruido_base",
-        "frecuencia_dominante_hz",
-        "tiempo_llegada_s",
-    ]
-    data = data.copy()
-    for column in numeric_columns:
-        data[column] = pd.to_numeric(data[column], errors="coerce")
-
-    if data[numeric_columns].isna().any().any():
-        return None, "El CSV contiene valores no numericos en columnas requeridas."
-
-    invalid_gps = (
-        ~data["latitud"].between(-90, 90)
-        | ~data["longitud"].between(-180, 180)
-    )
-    if invalid_gps.any():
-        return None, "El CSV contiene coordenadas GPS fuera de rango."
-
-    data = data.reset_index(drop=True)
-    if len(data) >= 2:
-        sensor_a = data.iloc[0]
-        sensor_b = data.iloc[1]
-        same_lat = math.isclose(float(sensor_a["latitud"]), float(sensor_b["latitud"]), abs_tol=1e-7)
-        same_lon = math.isclose(float(sensor_a["longitud"]), float(sensor_b["longitud"]), abs_tol=1e-7)
-        if same_lat and same_lon:
-            return None, (
-                "Sensor A y Sensor B tienen las mismas coordenadas GPS. "
-                "Capture o ingrese la ubicacion fisica de cada sensor por separado."
-            )
-
-    return data, None
-
-
 def load_local_sensor_csv(path):
     try:
         data = pd.read_csv(path)
     except Exception as exc:
         return None, f"No se pudo leer el archivo local: {exc}"
     return validate_sensor_data(data)
+
+
+def find_repository_csv_files():
+    csv_files = []
+    seen_paths = set()
+    for directory in CSV_SEARCH_DIRS:
+        if not directory.exists():
+            continue
+        for path in sorted(directory.glob("*.csv")):
+            resolved_path = path.resolve()
+            if resolved_path in seen_paths:
+                continue
+            seen_paths.add(resolved_path)
+            csv_files.append(path)
+    return csv_files
+
+
+def format_repository_csv_path(path):
+    try:
+        return str(path.relative_to(APP_DIR))
+    except ValueError:
+        return str(path)
 
 
 def save_sensor_data_copy(sensor_data, path):
@@ -630,25 +602,34 @@ st.caption(
 
 input_mode = st.radio(
     "Fuente de datos",
-    ["Cargar CSV", "Captura de datos en tiempo real"],
+    ["CSV del repositorio", "Captura de datos en tiempo real"],
     horizontal=True,
 )
 
 loaded_sensor_data = None
 csv_error = None
 
-if input_mode == "Cargar CSV":
-    uploaded_file = st.file_uploader("Cargue el archivo CSV de datos capturados por sensores", type=["csv"])
-    loaded_sensor_data, csv_error = load_sensor_csv(uploaded_file)
-    if csv_error:
-        st.info(csv_error)
+if input_mode == "CSV del repositorio":
+    repository_csv_files = find_repository_csv_files()
+    if not repository_csv_files:
+        st.info("No se encontraron archivos CSV en el repositorio. Agregue los CSV en la carpeta data/.")
     else:
-        st.success("Archivo CSV cargado correctamente.")
-        save_sensor_data_copy(loaded_sensor_data, ACTIVE_SENSOR_CSV_PATH)
-        save_sensor_data_copy(loaded_sensor_data, LAST_UPLOADED_CSV_PATH)
-        st.caption(f"Datos activos guardados en {ACTIVE_SENSOR_CSV_PATH}")
-        st.caption(f"Copia local guardada en {LAST_UPLOADED_CSV_PATH}")
-        st.dataframe(loaded_sensor_data, width="stretch", hide_index=True)
+        selected_csv_path = st.selectbox(
+            "Seleccione un CSV incluido en el repositorio",
+            repository_csv_files,
+            format_func=format_repository_csv_path,
+        )
+        loaded_sensor_data, csv_error = load_local_sensor_csv(selected_csv_path)
+        if csv_error:
+            st.info(csv_error)
+        else:
+            st.success("CSV del repositorio cargado correctamente.")
+            save_sensor_data_copy(loaded_sensor_data, ACTIVE_SENSOR_CSV_PATH)
+            save_sensor_data_copy(loaded_sensor_data, LAST_UPLOADED_CSV_PATH)
+            st.caption(f"Archivo seleccionado: {format_repository_csv_path(selected_csv_path)}")
+            st.caption(f"Datos activos guardados en {format_repository_csv_path(ACTIVE_SENSOR_CSV_PATH)}")
+            st.caption(f"Copia local guardada en {format_repository_csv_path(LAST_UPLOADED_CSV_PATH)}")
+            st.dataframe(loaded_sensor_data, width="stretch", hide_index=True)
 else:
     st.subheader("Captura de datos en tiempo real")
     st.caption(
