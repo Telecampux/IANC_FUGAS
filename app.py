@@ -642,8 +642,8 @@ st.markdown(
         }}
     </style>
     <div class="ianc-header">
-        <h1 class="ianc-title">IANC FUGAS - Localizacion acustica de fugas de agua en red matriz y secundaria</h1>
-        <div class="ianc-subtitle">Correlacion acustica</div>
+        <h1 class="ianc-title">IANC FUGAS - Localización acústica de fugas de agua en red matriz y secundaria</h1>
+        <div class="ianc-subtitle">Correlación acústica</div>
         <div class="ianc-copyright">
             Derechos de Autor: {COPYRIGHT_DATA['Nombre']} - {COPYRIGHT_DATA['Profesion']} -
             Matricula profesional {COPYRIGHT_DATA['Matricula profesional']}.
