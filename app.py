@@ -24,7 +24,8 @@ MATERIAL_SPEEDS = {
     "Personalizado": 950,
 }
 
-APP_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = Path(r"D:\IANC_FUGAS")
+APP_DIR = PROJECT_DIR if PROJECT_DIR.exists() else Path(__file__).resolve().parent
 DATA_DIR = APP_DIR / "data"
 ACTIVE_SENSOR_CSV_PATH = DATA_DIR / "datos_sensores_activos.csv"
 LAST_UPLOADED_CSV_PATH = DATA_DIR / "ultimo_csv_cargado.csv"
