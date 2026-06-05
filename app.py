@@ -607,22 +607,6 @@ st.markdown(
             line-height: 1.12;
         }}
 
-        .ianc-subtitle {{
-            margin: 0 0 0.25rem;
-            color: #ffffff;
-            font-size: clamp(1.25rem, 1.8vw, 1.75rem);
-            font-weight: 700;
-            line-height: 1.25;
-        }}
-
-        .ianc-copyright {{
-            margin: 0;
-            color: #ffffff;
-            font-size: clamp(1rem, 1.15vw, 1.18rem);
-            font-weight: 600;
-            line-height: 1.35;
-        }}
-
         @media (max-width: 640px) {{
             .block-container {{
                 padding-top: 1.6rem;
@@ -631,23 +615,10 @@ st.markdown(
             .ianc-title {{
                 font-size: 1.65rem;
             }}
-
-            .ianc-subtitle {{
-                font-size: 1.15rem;
-            }}
-
-            .ianc-copyright {{
-                font-size: 0.98rem;
-            }}
         }}
     </style>
     <div class="ianc-header">
-        <h1 class="ianc-title">IANC FUGAS - Localización acústica de fugas de agua en red matriz y secundaria</h1>
-        <div class="ianc-subtitle">Correlación acústica</div>
-        <div class="ianc-copyright">
-            Derechos de Autor: {COPYRIGHT_DATA['Nombre']} - {COPYRIGHT_DATA['Profesion']} -
-            Matricula profesional {COPYRIGHT_DATA['Matricula profesional']}.
-        </div>
+        <h1 class="ianc-title">IANC FUGAS - Localización acústica de fugas de Agua en red matriz y secundaria</h1>
     </div>
     """,
     unsafe_allow_html=True,
@@ -1146,3 +1117,25 @@ severity_table = pd.DataFrame(
     ]
 )
 st.dataframe(severity_table, width="stretch", hide_index=True)
+
+st.markdown(
+    f"""
+    <style>
+        .ianc-footer {{
+            margin-top: 1.75rem;
+            padding: 0.85rem 1rem;
+            background: #111827;
+            color: #ffffff;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            line-height: 1.35;
+        }}
+    </style>
+    <div class="ianc-footer">
+        Derechos de Autor: {COPYRIGHT_DATA['Nombre']} - {COPYRIGHT_DATA['Profesion']} -
+        Matricula profesional {COPYRIGHT_DATA['Matricula profesional']}.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
