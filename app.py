@@ -588,16 +588,69 @@ st.set_page_config(
     layout="wide",
 )
 
-st.title("IANC FUGAS - Localizacion acustica de fugas")
-st.caption("Analisis basado en correlacion entre dos senales acusticas.")
-st.caption(
-    "Los sensores aportan las mediciones acusticas. Las coordenadas GPS corresponden "
-    "al punto fisico donde el operario instala cada sensor."
-)
-st.caption(
-    "Derechos de autor: "
-    f"{COPYRIGHT_DATA['Nombre']} - {COPYRIGHT_DATA['Profesion']} - "
-    f"Matricula profesional {COPYRIGHT_DATA['Matricula profesional']}."
+st.markdown(
+    f"""
+    <style>
+        .block-container {{
+            padding-top: 2.35rem;
+        }}
+
+        .ianc-header {{
+            margin: 0.45rem 0 1.25rem;
+        }}
+
+        .ianc-title {{
+            margin: 0 0 0.35rem;
+            color: #000000;
+            font-size: clamp(2rem, 3vw, 3rem);
+            font-weight: 800;
+            line-height: 1.12;
+        }}
+
+        .ianc-subtitle {{
+            margin: 0 0 0.25rem;
+            color: #ffffff;
+            font-size: clamp(1.25rem, 1.8vw, 1.75rem);
+            font-weight: 700;
+            line-height: 1.25;
+        }}
+
+        .ianc-copyright {{
+            margin: 0;
+            color: #ffffff;
+            font-size: clamp(1rem, 1.15vw, 1.18rem);
+            font-weight: 600;
+            line-height: 1.35;
+        }}
+
+        @media (max-width: 640px) {{
+            .block-container {{
+                padding-top: 1.6rem;
+            }}
+
+            .ianc-title {{
+                font-size: 1.65rem;
+            }}
+
+            .ianc-subtitle {{
+                font-size: 1.15rem;
+            }}
+
+            .ianc-copyright {{
+                font-size: 0.98rem;
+            }}
+        }}
+    </style>
+    <div class="ianc-header">
+        <h1 class="ianc-title">IANC FUGAS - Localizacion acustica de fugas de agua en red matriz y secundaria</h1>
+        <div class="ianc-subtitle">Correlacion acustica</div>
+        <div class="ianc-copyright">
+            Derechos de Autor: {COPYRIGHT_DATA['Nombre']} - {COPYRIGHT_DATA['Profesion']} -
+            Matricula profesional {COPYRIGHT_DATA['Matricula profesional']}.
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
 input_mode = st.radio(
