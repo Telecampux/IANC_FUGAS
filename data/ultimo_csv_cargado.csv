@@ -1,0 +1,3 @@
+sensor_id,latitud,longitud,amplitud_rms,ruido_base,frecuencia_dominante_hz,tiempo_llegada_s
+Sensor A,4.711234,-74.072345,0.82,0.18,780,0.0
+Sensor B,4.711234,-74.070542,0.55,0.2,780,0.05
