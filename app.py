@@ -126,6 +126,112 @@ def classify_intensity(intensity):
     return "Critica", "#d6336c"
 
 
+def build_calculation_steps(
+    route_data,
+    distance_m,
+    acoustic_speed_m_s,
+    time_delta_s,
+    travel_delta_m,
+    raw_position_m,
+    leak_from_a_m,
+    leak_from_b_m,
+    amplitude_a,
+    amplitude_b,
+    noise_a,
+    noise_b,
+    intensity,
+    severity,
+    leak_lat,
+    leak_lon,
+    leak_gps_method,
+):
+    steps = []
+    for index, segment in route_data.iterrows():
+        horizontal_m = float(segment["longitud_horizontal_m"])
+        elevation_m = float(segment["desnivel_m"])
+        segment_length_m = float(segment["longitud_real_m"])
+        steps.append(
+            {
+                "Paso": f"Tramo {index + 1}",
+                "Calculo": (
+                    f"sqrt({horizontal_m:.2f}^2 + {elevation_m:.2f}^2) = "
+                    f"{segment_length_m:.2f} m"
+                ),
+                "Para que": "Obtener la longitud real del tramo incluyendo desnivel.",
+            }
+        )
+
+    segment_lengths = " + ".join(f"{value:.2f}" for value in route_data["longitud_real_m"])
+    steps.extend(
+        [
+            {
+                "Paso": "Longitud total",
+                "Calculo": f"{segment_lengths} = {distance_m:.2f} m",
+                "Para que": "Saber la distancia real entre Sensor A y Sensor B.",
+            },
+            {
+                "Paso": "Distancia equivalente del desfase",
+                "Calculo": (
+                    f"{acoustic_speed_m_s:.2f} m/s x {time_delta_s:.6f} s = "
+                    f"{travel_delta_m:.2f} m"
+                ),
+                "Para que": "Convertir la diferencia de llegada de la senal en metros.",
+            },
+            {
+                "Paso": "Posicion cruda desde Sensor A",
+                "Calculo": (
+                    f"({distance_m:.2f} - {acoustic_speed_m_s:.2f} x "
+                    f"{time_delta_s:.6f}) / 2 = {raw_position_m:.2f} m"
+                ),
+                "Para que": "Localizar el punto probable de fuga antes de limitarlo al tramo fisico.",
+            },
+            {
+                "Paso": "Posicion ajustada desde Sensor A",
+                "Calculo": (
+                    f"limitar {raw_position_m:.2f} al rango 0.00 - {distance_m:.2f} = "
+                    f"{leak_from_a_m:.2f} m"
+                ),
+                "Para que": "Evitar una ubicacion fuera de la tuberia entre sensores.",
+            },
+            {
+                "Paso": "Distancia desde Sensor B",
+                "Calculo": f"{distance_m:.2f} - {leak_from_a_m:.2f} = {leak_from_b_m:.2f} m",
+                "Para que": "Reportar la misma fuga tomando como referencia el Sensor B.",
+            },
+            {
+                "Paso": "Senal neta Sensor A",
+                "Calculo": f"max({amplitude_a:.2f} - {noise_a:.2f}, 0) = {max(amplitude_a - noise_a, 0):.2f}",
+                "Para que": "Separar la senal util del ruido base en el Sensor A.",
+            },
+            {
+                "Paso": "Senal neta Sensor B",
+                "Calculo": f"max({amplitude_b:.2f} - {noise_b:.2f}, 0) = {max(amplitude_b - noise_b, 0):.2f}",
+                "Para que": "Separar la senal util del ruido base en el Sensor B.",
+            },
+            {
+                "Paso": "Intensidad relativa",
+                "Calculo": (
+                    f"(({max(amplitude_a - noise_a, 0):.2f} + "
+                    f"{max(amplitude_b - noise_b, 0):.2f}) / 2) limitado a 0 - 1 = "
+                    f"{intensity:.2f}"
+                ),
+                "Para que": "Estimar la magnitud relativa de la fuga con base en ambas senales.",
+            },
+            {
+                "Paso": "Clasificacion de magnitud",
+                "Calculo": f"{intensity:.2f} corresponde a {severity}",
+                "Para que": "Traducir el indice numerico a una categoria operativa.",
+            },
+            {
+                "Paso": "GPS estimado",
+                "Calculo": f"{leak_lat:.7f}, {leak_lon:.7f} usando {leak_gps_method}",
+                "Para que": "Ubicar la fuga en mapa segun la distancia calculada desde Sensor A.",
+            },
+        ]
+    )
+    return pd.DataFrame(steps)
+
+
 def load_local_sensor_csv(path):
     try:
         data = pd.read_csv(path)
@@ -994,6 +1100,28 @@ if abs(time_delta_s) >= max_physical_delta_s:
         "extremo de la tuberia. Revise el desfase temporal del CSV o la velocidad "
         "acustica estimada."
     )
+
+with st.expander("Calculos paso a paso y para que", expanded=True):
+    calculation_steps = build_calculation_steps(
+        route_data,
+        distance_m,
+        acoustic_speed_m_s,
+        time_delta_s,
+        travel_delta_m,
+        raw_position_m,
+        leak_from_a_m,
+        leak_from_b_m,
+        amplitude_a,
+        amplitude_b,
+        noise_a,
+        noise_b,
+        intensity,
+        severity,
+        leak_lat,
+        leak_lon,
+        leak_gps_method,
+    )
+    st.dataframe(calculation_steps, width="stretch", hide_index=True)
 
 left, right = st.columns([1.35, 1])
 
